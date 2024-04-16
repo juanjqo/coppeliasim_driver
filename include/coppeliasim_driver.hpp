@@ -52,10 +52,10 @@ public:
     std::tuple<VectorXd, VectorXd> get_joint_velocity_limits();
     int get_port();
 
-    void connect_coppeliasim();
-    void initialize_coppeliasim();
-    void deinitialize_coppeliasim();
-    void disconnect_coppeliasim();
+    void connect();
+    void initialize();
+    void deinitialize();
+    void disconnect();
 
     VectorXd get_configuration_space_positions();
     VectorXd get_configuration_space_velocities();

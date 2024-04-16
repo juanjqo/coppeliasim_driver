@@ -65,7 +65,7 @@ int CoppeliaSimDriver::get_port()
 /**
  * @brief CoppeliaSimDriver::connect_coppeliasim
  */
-void CoppeliaSimDriver::connect_coppeliasim()
+void CoppeliaSimDriver::connect()
 {
     if (!parameters_ready_)
     {
@@ -92,14 +92,14 @@ void CoppeliaSimDriver::_connect_coppeliasim()
     }
 }
 
-void CoppeliaSimDriver::initialize_coppeliasim()
+void CoppeliaSimDriver::initialize()
 {
     vi_->start_simulation();
     status_msg_ = "Initialized!";
     _start_echo_robot_state_mode_thread();
 }
 
-void CoppeliaSimDriver::deinitialize_coppeliasim()
+void CoppeliaSimDriver::deinitialize()
 {
     vi_->stop_simulation();
     status_msg_ = "Deinitialized!";
@@ -112,7 +112,7 @@ void CoppeliaSimDriver::deinitialize_coppeliasim()
 
 }
 
-void CoppeliaSimDriver::disconnect_coppeliasim()
+void CoppeliaSimDriver::disconnect()
 {
     vi_->disconnect();
     status_msg_ = "Disconnected!";

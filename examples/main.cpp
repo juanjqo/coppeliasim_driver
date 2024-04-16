@@ -14,9 +14,9 @@ int main()
 
     auto coppeliasim_driver = std::make_unique<CoppeliaSimDriver>();
     coppeliasim_driver->set_parameters("127.0.0.1", 19997, jointnames, {q_min, q_max}, {q_dot_min, q_dot_max});
-    coppeliasim_driver->connect_coppeliasim();
+    coppeliasim_driver->connect();
     std::cout<<coppeliasim_driver->get_status_message()<<std::endl;
-    coppeliasim_driver->disconnect_coppeliasim();
+    coppeliasim_driver->disconnect();
     std::cout<<coppeliasim_driver->get_status_message()<<std::endl;
     return 0;
 }
