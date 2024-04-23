@@ -4,7 +4,7 @@
 CoppeliaSimDriver::CoppeliaSimDriver()
     :parameters_ready_(false)
 {
-   vi_ = std::make_unique<DQ_VrepInterface>();
+   vi_ = std::make_unique<DQ_CoppeliaSimInterface>();
 }
 
 void CoppeliaSimDriver::set_parameters(const std::string& ip,
@@ -79,7 +79,7 @@ void CoppeliaSimDriver::_connect_coppeliasim()
 {
     try
     {
-        if (!vi_->connect(ip_, port_,100,10))
+        if (!vi_->connect(ip_, port_))
             throw std::runtime_error("Unable to connect to CoppeliaSim.");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         status_msg_ = "connected!";
@@ -101,7 +101,6 @@ void CoppeliaSimDriver::initialize()
 
 void CoppeliaSimDriver::deinitialize()
 {
-    vi_->stop_simulation();
     status_msg_ = "Deinitialized!";
     _finish_echo_robot_state();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -110,10 +109,12 @@ void CoppeliaSimDriver::deinitialize()
         echo_robot_state_mode_thread_.join();
     }
 
+
 }
 
 void CoppeliaSimDriver::disconnect()
 {
+    vi_->stop_simulation();
     vi_->disconnect();
     status_msg_ = "Disconnected!";
 }
@@ -147,15 +148,15 @@ void CoppeliaSimDriver::_start_echo_robot_state_mode()
             q_ = vi_->get_joint_positions(jointnames_);
             q_dot_ = vi_->get_joint_velocities(jointnames_);
             torques_ = vi_->get_joint_torques(jointnames_);
+            //std::cout<<"sim time: "<<vi_->get_simulation_time()<<std::endl;
+            std::cout<<"q: "<<q_.transpose()<<std::endl;
         }
         catch (std::exception& e)
         {
             //set_message_window_parameters(true, e.what());
             std::cout<<e.what()<<std::endl;
         }
-
     }
-    //show_message_window();
 }
 
 

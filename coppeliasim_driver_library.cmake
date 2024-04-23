@@ -37,4 +37,4 @@ add_library(coppeliasim_driver ${COPPELIASIM_DRIVER_HEADERS}
 
 target_link_libraries(coppeliasim_driver
     dqrobotics
-    dqrobotics-interface-vrep)
+    dqrobotics-interface-coppeliasim)

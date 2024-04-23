@@ -2,7 +2,8 @@
 #include <string>
 #include <yaml-cpp/yaml.h>
 #include <Eigen/Dense>
-#include <dqrobotics/interfaces/vrep/DQ_VrepInterface.h>
+//#include <dqrobotics/interfaces/vrep/DQ_VrepInterface.h>
+#include <dqrobotics/interfaces/coppeliasim/DQ_CoppeliaSimInterface.h>
 #include <memory>
 #include <thread>
 #include <atomic>
@@ -23,7 +24,7 @@ protected:
     int port_;
     std::string status_msg_;
 
-    std::unique_ptr<DQ_VrepInterface> vi_;
+    std::unique_ptr<DQ_CoppeliaSimInterface> vi_;
     bool parameters_ready_;
 
     void _start_echo_robot_state_mode();
