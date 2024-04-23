@@ -10,6 +10,15 @@
 
 class CoppeliaSimDriver
 {
+private:
+    enum STATUS{
+        IDLE,
+        CONNECTED,
+        INITIALIZED,
+        DEINITIALIZED,
+        DISCONNECTED,
+    };
+    STATUS current_status_;
 protected:
     std::string ip_;
     std::vector<std::string> jointnames_;

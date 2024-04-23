@@ -10,7 +10,7 @@
  *        is used only to monitor the scene.
  */
 CoppeliaSimDriver::CoppeliaSimDriver(const OPERATION_MODE &operation_mode)
-    :parameters_ready_(false),master_mode_(false)
+    :current_status_(STATUS::IDLE),parameters_ready_(false), master_mode_(false)
 {
     vi_ = std::make_unique<DQ_CoppeliaSimInterface>();
     if (operation_mode == MASTER)
@@ -123,6 +123,7 @@ void CoppeliaSimDriver::connect()
         throw std::runtime_error("Error in CoppeliaSimDriver::connect(). Parameters unitialized!");
     }else{
         _connect_coppeliasim();
+        current_status_ = STATUS::CONNECTED;
     }
 }
 
@@ -151,23 +152,32 @@ void CoppeliaSimDriver::_connect_coppeliasim()
  */
 void CoppeliaSimDriver::initialize()
 {
-    if (master_mode_)
-        vi_->start_simulation();
-    status_msg_ = "Initialized!";
-    _start_echo_robot_state_mode_thread();
+    if (current_status_ == STATUS::CONNECTED)
+    {
+        if (master_mode_)
+            vi_->start_simulation();
+        status_msg_ = "Initialized!";
+        current_status_ = STATUS::INITIALIZED;
+        _start_echo_robot_state_mode_thread();
+    }else{
+        std::cerr<<"The driver must be connected before to be initialized. "<<std::endl;
+    }
 }
 
 void CoppeliaSimDriver::deinitialize()
 {
-    status_msg_ = "Deinitialized!";
-    _finish_echo_robot_state();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    if (echo_robot_state_mode_thread_.joinable())
+    if (current_status_ == STATUS::INITIALIZED)
     {
-        echo_robot_state_mode_thread_.join();
+        status_msg_ = "Deinitialized!";
+        _finish_echo_robot_state();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        if (echo_robot_state_mode_thread_.joinable())
+        {
+            echo_robot_state_mode_thread_.join();
+        }
+        if (master_mode_)
+            vi_->stop_simulation();
     }
-    if (master_mode_)
-        vi_->stop_simulation();
 }
 
 /**
