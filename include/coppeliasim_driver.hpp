@@ -20,12 +20,14 @@ protected:
     VectorXd q_;
     VectorXd q_dot_;
     VectorXd torques_;
+    double simulation_time_;
     int n_joints_;
     int port_;
     std::string status_msg_;
 
     std::unique_ptr<DQ_CoppeliaSimInterface> vi_;
     bool parameters_ready_;
+    bool master_mode_;
 
     void _start_echo_robot_state_mode();
     std::thread echo_robot_state_mode_thread_;
@@ -36,7 +38,11 @@ protected:
     void _check_parameter_sizes();
 
 public:
-    CoppeliaSimDriver();
+    enum OPERATION_MODE{
+        STEALTH,
+        MASTER,
+    };
+    CoppeliaSimDriver(const OPERATION_MODE& operation_mode = MASTER);
     CoppeliaSimDriver(const CoppeliaSimDriver&) = delete;
     CoppeliaSimDriver& operator= (const CoppeliaSimDriver&) = delete;
 
@@ -47,20 +53,21 @@ public:
                         const std::tuple<VectorXd, VectorXd>& joint_velocity_limits
                         );
 
-    std::string get_ip();
-    std::vector<std::string> get_jointnames();
-    std::tuple<VectorXd, VectorXd> get_joint_limits();
-    std::tuple<VectorXd, VectorXd> get_joint_velocity_limits();
-    int get_port();
+    std::string get_ip() const;
+    std::vector<std::string> get_jointnames() const;
+    std::tuple<VectorXd, VectorXd> get_joint_limits() const;
+    std::tuple<VectorXd, VectorXd> get_joint_velocity_limits() const;
+    int get_port() const;
 
     void connect();
     void initialize();
     void deinitialize();
     void disconnect();
 
-    VectorXd get_configuration_space_positions();
-    VectorXd get_configuration_space_velocities();
-    VectorXd get_configuration_space_torques();
+    VectorXd get_configuration_space_positions() const;
+    VectorXd get_configuration_space_velocities() const;
+    VectorXd get_configuration_space_torques() const;
+    double   get_simulation_time() const;
     std::string get_status_message();
 };
 

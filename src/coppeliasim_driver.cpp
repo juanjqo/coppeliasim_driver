@@ -1,12 +1,31 @@
 #include "coppeliasim_driver.hpp"
 
 
-CoppeliaSimDriver::CoppeliaSimDriver()
-    :parameters_ready_(false)
+/**
+ * @brief CoppeliaSimDriver::CoppeliaSimDriver
+ * @param operation_mode Define the operation mode {STEALTH, MASTER}. STEALTH
+ *        means the driver won't be allowed to start or stop a CoppeliaSim simulation.
+ *        Otherwise, use MASTER (default).
+ *        STEALTH is useful when you have another client controlling a scene and the driver
+ *        is used only to monitor the scene.
+ */
+CoppeliaSimDriver::CoppeliaSimDriver(const OPERATION_MODE &operation_mode)
+    :parameters_ready_(false),master_mode_(false)
 {
-   vi_ = std::make_unique<DQ_CoppeliaSimInterface>();
+    vi_ = std::make_unique<DQ_CoppeliaSimInterface>();
+    if (operation_mode == MASTER)
+        master_mode_ = true;
 }
 
+
+/**
+ * @brief CoppeliaSimDriver::set_parameters
+ * @param ip
+ * @param port
+ * @param jointnames
+ * @param joint_limits
+ * @param joint_velocity_limits
+ */
 void CoppeliaSimDriver::set_parameters(const std::string& ip,
                                        const int& port,
                                        const std::vector<std::string>& jointnames,
@@ -22,6 +41,19 @@ void CoppeliaSimDriver::set_parameters(const std::string& ip,
     parameters_ready_ = true;
 }
 
+/**
+ * @brief CoppeliaSimDriver::get_ip
+ * @return
+ */
+std::string CoppeliaSimDriver::get_ip() const
+{
+    return ip_;
+}
+
+
+/**
+ * @brief CoppeliaSimDriver::_check_parameter_sizes
+ */
 void CoppeliaSimDriver::_check_parameter_sizes()
 {
     if (static_cast<std::size_t>(q_min_.size()) != static_cast<std::size_t>(q_max_.size())
@@ -40,23 +72,42 @@ void CoppeliaSimDriver::_check_parameter_sizes()
     q_dot_= Eigen::VectorXd::Zero(n_joints_);
 }
 
-std::vector<std::string> CoppeliaSimDriver::get_jointnames()
+
+/**
+ * @brief CoppeliaSimDriver::get_jointnames
+ * @return
+ */
+std::vector<std::string> CoppeliaSimDriver::get_jointnames() const
 {
     return jointnames_;
 }
 
 
-std::tuple<VectorXd, VectorXd> CoppeliaSimDriver::get_joint_limits()
+/**
+ * @brief CoppeliaSimDriver::get_joint_limits
+ * @return
+ */
+std::tuple<VectorXd, VectorXd> CoppeliaSimDriver::get_joint_limits() const
 {
     return {q_min_, q_max_};
 }
 
-std::tuple<VectorXd, VectorXd> CoppeliaSimDriver::get_joint_velocity_limits()
+
+/**
+ * @brief CoppeliaSimDriver::get_joint_velocity_limits
+ * @return
+ */
+std::tuple<VectorXd, VectorXd> CoppeliaSimDriver::get_joint_velocity_limits() const
 {
     return {q_dot_min_, q_dot_max_};
 }
 
-int CoppeliaSimDriver::get_port()
+
+/**
+ * @brief CoppeliaSimDriver::get_port
+ * @return
+ */
+int CoppeliaSimDriver::get_port() const
 {
     return port_;
 }
@@ -69,12 +120,15 @@ void CoppeliaSimDriver::connect()
 {
     if (!parameters_ready_)
     {
-        throw std::runtime_error("Parameters unitialized!");
+        throw std::runtime_error("Error in CoppeliaSimDriver::connect(). Parameters unitialized!");
     }else{
         _connect_coppeliasim();
     }
 }
 
+/**
+ * @brief CoppeliaSimDriver::_connect_coppeliasim
+ */
 void CoppeliaSimDriver::_connect_coppeliasim()
 {
     try
@@ -88,13 +142,17 @@ void CoppeliaSimDriver::_connect_coppeliasim()
     {
         std::cout<<e.what()<<std::endl;
         vi_->stop_simulation();
-        vi_->disconnect();
+        //vi_->disconnect();
     }
 }
 
+/**
+ * @brief CoppeliaSimDriver::initialize
+ */
 void CoppeliaSimDriver::initialize()
 {
-    vi_->start_simulation();
+    if (master_mode_)
+        vi_->start_simulation();
     status_msg_ = "Initialized!";
     _start_echo_robot_state_mode_thread();
 }
@@ -108,37 +166,64 @@ void CoppeliaSimDriver::deinitialize()
     {
         echo_robot_state_mode_thread_.join();
     }
-
-
+    if (master_mode_)
+        vi_->stop_simulation();
 }
 
+/**
+ * @brief CoppeliaSimDriver::disconnect
+ */
 void CoppeliaSimDriver::disconnect()
 {
-    vi_->stop_simulation();
-    vi_->disconnect();
+
+    //vi_->disconnect();
     status_msg_ = "Disconnected!";
 }
 
-VectorXd CoppeliaSimDriver::get_configuration_space_positions()
+/**
+ * @brief CoppeliaSimDriver::get_configuration_space_positions
+ * @return
+ */
+VectorXd CoppeliaSimDriver::get_configuration_space_positions() const
 {
     return q_;
 }
 
-VectorXd CoppeliaSimDriver::get_configuration_space_velocities()
+/**
+ * @brief CoppeliaSimDriver::get_configuration_space_velocities
+ * @return
+ */
+VectorXd CoppeliaSimDriver::get_configuration_space_velocities() const
 {
     return q_dot_;
 }
 
-VectorXd CoppeliaSimDriver::get_configuration_space_torques()
+/**
+ * @brief CoppeliaSimDriver::get_configuration_space_torques
+ * @return
+ */
+VectorXd CoppeliaSimDriver::get_configuration_space_torques() const
 {
     return torques_;
 }
 
+double CoppeliaSimDriver::get_simulation_time() const
+{
+    return simulation_time_;
+}
+
+/**
+ * @brief CoppeliaSimDriver::get_status_message
+ * @return
+ */
 std::string CoppeliaSimDriver::get_status_message()
 {
     return status_msg_;
 }
 
+/**
+ * @brief CoppeliaSimDriver::_start_echo_robot_state_mode
+ */
 void CoppeliaSimDriver::_start_echo_robot_state_mode()
 {
     while(!finish_echo_robot_state_)
@@ -148,7 +233,7 @@ void CoppeliaSimDriver::_start_echo_robot_state_mode()
             q_ = vi_->get_joint_positions(jointnames_);
             q_dot_ = vi_->get_joint_velocities(jointnames_);
             torques_ = vi_->get_joint_torques(jointnames_);
-            //std::cout<<"sim time: "<<vi_->get_simulation_time()<<std::endl;
+            simulation_time_ = vi_->get_simulation_time();
             std::cout<<"q: "<<q_.transpose()<<std::endl;
         }
         catch (std::exception& e)
@@ -160,7 +245,9 @@ void CoppeliaSimDriver::_start_echo_robot_state_mode()
 }
 
 
-
+/**
+ * @brief CoppeliaSimDriver::_start_echo_robot_state_mode_thread
+ */
 void  CoppeliaSimDriver::_start_echo_robot_state_mode_thread()
 {
     finish_echo_robot_state_ = false;
@@ -173,7 +260,9 @@ void  CoppeliaSimDriver::_start_echo_robot_state_mode_thread()
     echo_robot_state_mode_thread_ = std::thread(&CoppeliaSimDriver::_start_echo_robot_state_mode, this);
 }
 
-
+/**
+ * @brief CoppeliaSimDriver::_finish_echo_robot_state
+ */
 void  CoppeliaSimDriver::_finish_echo_robot_state()
 {
     status_msg_ = "Finishing echo robot state.";
