@@ -234,7 +234,7 @@ void CoppeliaSimDriver::_start_echo_robot_state_mode()
             q_dot_ = vi_->get_joint_velocities(jointnames_);
             torques_ = vi_->get_joint_torques(jointnames_);
             simulation_time_ = vi_->get_simulation_time();
-            std::cout<<"q: "<<q_.transpose()<<std::endl;
+            //std::cout<<"q: "<<q_.transpose()<<std::endl;
         }
         catch (std::exception& e)
         {
